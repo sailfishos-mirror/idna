@@ -376,7 +376,7 @@ def encode(
     if not isinstance(s, str):
         try:
             s = str(s, "ascii")
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, TypeError):
             raise IDNAError("should pass a unicode string to the function rather than a byte string.")
     if uts46:
         s = uts46_remap(s, std3_rules, transitional)
@@ -411,11 +411,11 @@ def decode(
     uts46: bool = False,
     std3_rules: bool = False,
 ) -> str:
-    try:
-        if not isinstance(s, str):
+    if not isinstance(s, str):
+        try:
             s = str(s, "ascii")
-    except UnicodeDecodeError:
-        raise IDNAError("Invalid ASCII in A-label")
+        except (UnicodeDecodeError, TypeError):
+            raise IDNAError("Invalid ASCII in A-label")
     if uts46:
         s = uts46_remap(s, std3_rules, False)
     trailing_dot = False
