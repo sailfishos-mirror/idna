@@ -547,12 +547,9 @@ def encode(
     if uts46:
         s = uts46_remap(s, std3_rules, transitional)
 
-    # Reject inputs that exceed the maximum DNS domain length up-front.
-    # Each codepoint in a U-label contributes at least one octet to its
-    # A-label form, so any input longer than the domain limit cannot
-    # produce a valid A-domain. Short-circuiting here prevents per-label
-    # validation from being driven into quadratic time
-    if len(s) > 254:
+    # Reject inputs that exceed the maximum DNS domain length up-front
+    # to avoid expensive computation on long inputs.
+    if not valid_string_length(s, trailing_dot=True):
         raise IDNAError("Domain too long")
 
     trailing_dot = False
@@ -610,10 +607,9 @@ def decode(
             raise IDNAError("Invalid ASCII in A-label")
     if uts46:
         s = uts46_remap(s, std3_rules, False)
-    # See encode() for rationale; the same bound applies because every
-    # legal A-domain is at most 254 octets and every codepoint of a
-    # legal U-domain contributes at least one octet to its A-form.
-    if len(s) > 254:
+    # Reject inputs that exceed the maximum DNS domain length up-front
+    # to avoid expensive computation on long inputs.
+    if not valid_string_length(s, trailing_dot=True):
         raise IDNAError("Domain too long")
     trailing_dot = False
     result = []
