@@ -3,7 +3,7 @@
 History
 -------
 
-3.14 (unreleased)
+3.14 (2026-05-10)
 +++++++++++++++++
 
 - Reject oversized inputs up-front.  Removes opportunity to
