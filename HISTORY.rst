@@ -3,6 +3,15 @@
 History
 -------
 
+3.14 (unreleased)
++++++++++++++++++
+
+- Reject oversized inputs up-front.  Removes opportunity to
+  process labels into quadratic time, closing a bypass of the
+  CVE-2024-3651 mitigation. [GHSA-65pc-fj4g-8rjx]
+
+Thanks to Stan Ulbrych for reporting the issue.
+
 3.13 (2026-04-22)
 +++++++++++++++++
 

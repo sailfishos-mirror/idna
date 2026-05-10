@@ -82,6 +82,19 @@ class IDNATests(unittest.TestCase):
         self.assertFalse(idna.valid_label_length("a" * 64))
         self.assertRaises(idna.IDNAError, idna.encode, "a" * 64)
 
+    def test_oversized_input_rejected_promptly(self):
+        # GHSA-65pc-fj4g-8rjx: encode/decode must reject inputs that
+        # exceed the maximum DNS domain length before per-codepoint
+        # validation runs, so labels dominated by CONTEXTO codepoints
+        # cannot drive validation into quadratic time.
+        import time
+
+        for payload in ("٠" * 8000, "・" * 8000 + "漢"):
+            start = time.perf_counter()
+            self.assertRaises(idna.IDNAError, idna.encode, payload)
+            self.assertRaises(idna.IDNAError, idna.decode, payload)
+            self.assertLess(time.perf_counter() - start, 1.0)
+
     def test_check_bidi(self):
         la = "\u0061"
         r = "\u05d0"
