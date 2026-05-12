@@ -1,5 +1,28 @@
 # History
 
+## 3.15rc0 (2026-05-12)
+
+- Enforce DNS-length cap on individual labels early in `check_label`,
+  short-circuiting contextual-rule processing for oversized input
+  while staying compatible with UTS 46 usage.
+- Tidy core helpers: hoist bidi category sets to module-level
+  frozensets (avoiding per-codepoint list construction), simplify
+  length checks, and reuse the shared `_unicode_dots_re` from
+  `idna.core` in the codec module.
+- Use `raise ... from err` for proper exception chaining and
+  switch internal string formatting to f-strings.
+- Allow `flit_core` 4.x in the build backend.
+- Expand the ruff lint set (flake8-bugbear, flake8-simplify,
+  pyupgrade, perflint) and apply the surfaced fixes; pin lint CI
+  to Python 3.14.
+- Add Dependabot configuration for GitHub Actions.
+- Convert README and HISTORY from reStructuredText to Markdown.
+- Reference CVE-2026-45409 for the 3.14 advisory in place of the
+  initial GHSA identifier.
+
+Thanks to Felix Yan, Stan Ulbrych, and metsw24-max for
+contributions to this release.
+
 ## 3.14 (2026-05-10)
 
 - Removed opportunity to process long inputs into quadratic
