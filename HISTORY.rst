@@ -8,7 +8,7 @@ History
 
 - Removed opportunity to process long inputs into quadratic
   time by rejecting oversize inputs up-front. Closes a bypass
-  of the CVE-2024-3651 mitigation. [GHSA-65pc-fj4g-8rjx]
+  of the CVE-2024-3651 mitigation. [CVE-2026-45409]
 
 Thanks to Stan Ulbrych for reporting the issue.
 
