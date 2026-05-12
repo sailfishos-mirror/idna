@@ -12,6 +12,18 @@ _alabel_prefix = b"xn--"
 _unicode_dots_re = re.compile("[\u002e\u3002\uff0e\uff61]")
 
 
+# Bidi category sets from RFC 5893, hoisted out of the per-codepoint loop
+_bidi_rtl_first = frozenset({"R", "AL"})
+_bidi_rtl_categories = frozenset({"R", "AL", "AN"})
+_bidi_rtl_allowed = frozenset({"R", "AL", "AN", "EN", "ES", "CS", "ET", "ON", "BN", "NSM"})
+_bidi_rtl_valid_ending = frozenset({"R", "AL", "EN", "AN"})
+_bidi_rtl_numeric = frozenset({"AN", "EN"})
+_bidi_ltr_allowed = frozenset({"L", "EN", "ES", "CS", "ET", "ON", "BN", "NSM"})
+_bidi_ltr_valid_ending = frozenset({"L", "EN"})
+_bidi_joiner_l_or_d = frozenset({ord("L"), ord("D")})
+_bidi_joiner_r_or_d = frozenset({ord("R"), ord("D")})
+
+
 class IDNAError(UnicodeError):
     """Base exception for all IDNA-encoding related problems"""
 
@@ -68,25 +80,21 @@ def valid_label_length(label: Union[bytes, str]) -> bool:
     :returns: ``True`` if the label is within the length limit, otherwise
         ``False``.
     """
-    if len(label) > 63:
-        return False
-    return True
+    return len(label) <= 63
 
 
-def valid_string_length(label: Union[bytes, str], trailing_dot: bool) -> bool:
+def valid_string_length(domain: Union[bytes, str], trailing_dot: bool) -> bool:
     """Check that a full domain name does not exceed the maximum length.
 
     Per :rfc:`1035`, a domain name is limited to 253 octets when no trailing
     dot is present, or 254 octets when one is included.
 
-    :param label: The full (possibly multi-label) domain name.
-    :param trailing_dot: ``True`` if ``label`` includes a trailing ``.``.
+    :param domain: The full (possibly multi-label) domain name.
+    :param trailing_dot: ``True`` if ``domain`` includes a trailing ``.``.
     :returns: ``True`` if the domain is within the length limit, otherwise
         ``False``.
     """
-    if len(label) > (254 if trailing_dot else 253):
-        return False
-    return True
+    return len(domain) <= (254 if trailing_dot else 253)
 
 
 def check_bidi(label: str, check_ltr: bool = False) -> bool:
@@ -112,14 +120,14 @@ def check_bidi(label: str, check_ltr: bool = False) -> bool:
         if direction == "":
             # String likely comes from a newer version of Unicode
             raise IDNABidiError("Unknown directionality in label {} at position {}".format(repr(label), idx))
-        if direction in ["R", "AL", "AN"]:
+        if direction in _bidi_rtl_categories:
             bidi_label = True
     if not bidi_label and not check_ltr:
         return True
 
     # Bidi rule 1
     direction = unicodedata.bidirectional(label[0])
-    if direction in ["R", "AL"]:
+    if direction in _bidi_rtl_first:
         rtl = True
     elif direction == "L":
         rtl = False
@@ -133,26 +141,15 @@ def check_bidi(label: str, check_ltr: bool = False) -> bool:
 
         if rtl:
             # Bidi rule 2
-            if direction not in [
-                "R",
-                "AL",
-                "AN",
-                "EN",
-                "ES",
-                "CS",
-                "ET",
-                "ON",
-                "BN",
-                "NSM",
-            ]:
+            if direction not in _bidi_rtl_allowed:
                 raise IDNABidiError("Invalid direction for codepoint at position {} in a right-to-left label".format(idx))
             # Bidi rule 3
-            if direction in ["R", "AL", "EN", "AN"]:
+            if direction in _bidi_rtl_valid_ending:
                 valid_ending = True
             elif direction != "NSM":
                 valid_ending = False
             # Bidi rule 4
-            if direction in ["AN", "EN"]:
+            if direction in _bidi_rtl_numeric:
                 if not number_type:
                     number_type = direction
                 else:
@@ -160,10 +157,10 @@ def check_bidi(label: str, check_ltr: bool = False) -> bool:
                         raise IDNABidiError("Can not mix numeral types in a right-to-left label")
         else:
             # Bidi rule 5
-            if direction not in ["L", "EN", "ES", "CS", "ET", "ON", "BN", "NSM"]:
+            if direction not in _bidi_ltr_allowed:
                 raise IDNABidiError("Invalid direction for codepoint at position {} in a left-to-right label".format(idx))
             # Bidi rule 6
-            if direction in ["L", "EN"]:
+            if direction in _bidi_ltr_valid_ending:
                 valid_ending = True
             elif direction != "NSM":
                 valid_ending = False
@@ -244,7 +241,7 @@ def valid_contextj(label: str, pos: int) -> bool:
             joining_type = idnadata.joining_types().get(ord(label[i]))
             if joining_type == ord("T"):
                 continue
-            elif joining_type in [ord("L"), ord("D")]:
+            elif joining_type in _bidi_joiner_l_or_d:
                 ok = True
                 break
             else:
@@ -258,7 +255,7 @@ def valid_contextj(label: str, pos: int) -> bool:
             joining_type = idnadata.joining_types().get(ord(label[i]))
             if joining_type == ord("T"):
                 continue
-            elif joining_type in [ord("R"), ord("D")]:
+            elif joining_type in _bidi_joiner_r_or_d:
                 ok = True
                 break
             else:
@@ -449,7 +446,7 @@ def ulabel(label: Union[str, bytes, bytearray]) -> str:
         label_bytes = label_bytes[len(_alabel_prefix) :]
         if not label_bytes:
             raise IDNAError("Malformed A-label, no Punycode eligible content found")
-        if label_bytes.decode("ascii")[-1] == "-":
+        if label_bytes.endswith(b"-"):
             raise IDNAError("A-label must not end with a hyphen")
     else:
         check_label(label_bytes)
@@ -493,11 +490,22 @@ def uts46_remap(domain: str, std3_rules: bool = True, transitional: bool = False
         replacement: Optional[str] = None
         if len(uts46row) == 3:
             replacement = uts46row[2]  # ty: ignore[index-out-of-bounds]
-        if status == "V" or (status == "D" and not transitional) or (status == "3" and not std3_rules and replacement is None):
-            output += char
-        elif replacement is not None and (
+
+        # UTS #46 §4: V is always valid, D is deviation (kept unless transitional),
+        # 3 is disallowed-STD3 (kept unmapped if std3_rules is off and no mapping).
+        keep_as_is = (
+            status == "V" or (status == "D" and not transitional) or (status == "3" and not std3_rules and replacement is None)
+        )
+        # M is mapped, 3-with-replacement and transitional D fall through to the
+        # same replacement output path.
+        use_replacement = replacement is not None and (
             status == "M" or (status == "3" and not std3_rules) or (status == "D" and transitional)
-        ):
+        )
+
+        if keep_as_is:
+            output += char
+        elif use_replacement:
+            assert replacement is not None  # narrowed by use_replacement
             output += replacement
         elif status == "I":
             continue
