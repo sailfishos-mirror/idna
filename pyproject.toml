@@ -56,4 +56,11 @@ line-length = 127
 [tool.ruff.lint]
 extend-select = [
     "I",            # isort
+    "B",            # flake8-bugbear
+    "SIM",          # flake8-simplify
+    "UP",           # pyupgrade
+    "PERF",         # perflint
 ]
+[tool.ruff.lint.pyupgrade]
+# Honour the project's Python 3.8 floor when applying pyupgrade rules.
+keep-runtime-typing = true

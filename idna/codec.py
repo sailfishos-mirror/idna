@@ -17,7 +17,7 @@ class Codec(codecs.Codec):
 
     def encode(self, data: str, errors: str = "strict") -> Tuple[bytes, int]:  # ty: ignore[invalid-method-override]
         if errors != "strict":
-            raise IDNAError('Unsupported error handling "{}"'.format(errors))
+            raise IDNAError(f'Unsupported error handling "{errors}"')
 
         if not data:
             return b"", 0
@@ -26,7 +26,7 @@ class Codec(codecs.Codec):
 
     def decode(self, data: bytes, errors: str = "strict") -> Tuple[str, int]:  # ty: ignore[invalid-method-override]
         if errors != "strict":
-            raise IDNAError('Unsupported error handling "{}"'.format(errors))
+            raise IDNAError(f'Unsupported error handling "{errors}"')
 
         if not data:
             return "", 0
@@ -48,7 +48,7 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
 
     def _buffer_encode(self, data: str, errors: str, final: bool) -> Tuple[bytes, int]:  # ty: ignore[invalid-method-override]
         if errors != "strict":
-            raise IDNAError('Unsupported error handling "{}"'.format(errors))
+            raise IDNAError(f'Unsupported error handling "{errors}"')
 
         if not data:
             return b"", 0
@@ -91,7 +91,7 @@ class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
 
     def _buffer_decode(self, data: Any, errors: str, final: bool) -> Tuple[str, int]:  # ty: ignore[invalid-method-override]
         if errors != "strict":
-            raise IDNAError('Unsupported error handling "{}"'.format(errors))
+            raise IDNAError(f'Unsupported error handling "{errors}"')
 
         if not data:
             return ("", 0)
