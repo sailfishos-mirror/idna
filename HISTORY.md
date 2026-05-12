@@ -1,6 +1,6 @@
 # History
 
-## 3.15rc0 (2026-05-12)
+## 3.15 (2026-05-12)
 
 - Enforce DNS-length cap on individual labels early in `check_label`,
   short-circuiting contextual-rule processing for oversized input
