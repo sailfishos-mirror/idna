@@ -1,5 +1,10 @@
 # History
 
+## Unreleased
+
+- Added machine-readable attributes to exceptions, allowing UIs
+  to provide more tailored errors.
+
 ## 3.18 (2026-06-02)
 
 - When decoding a domain, add a `display` argument that will pass

@@ -1,4 +1,5 @@
 from .core import (
+    ErrorCode,
     IDNABidiError,
     IDNAError,
     InvalidCodepoint,
@@ -23,6 +24,7 @@ from .package_data import __version__
 
 __all__ = [
     "__version__",
+    "ErrorCode",
     "IDNABidiError",
     "IDNAError",
     "InvalidCodepoint",
